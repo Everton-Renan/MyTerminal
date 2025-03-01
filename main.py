@@ -58,6 +58,14 @@ class Terminal:
                     command = create_commands['create_venv'] + \
                         self._path + f'/{commands[2]} '
 
+                if '-i' in commands:
+                    install = False
+                    i_index = commands.index('-i')
+
+                    for i in range(i_index+1, len(commands)):
+                        command_install = create_commands['install_module'] + \
+                            commands[i]
+
         if self.execute_command(command):
             return True
         return False
