@@ -6,6 +6,7 @@ from myterminal.commands_dict import create_commands
 INPUT_COLOR = '\033[32m'
 ERROR_COLOR = '\033[31m'
 RESET_COLOR = '\033[0m'
+OUTPUT_COLOR = '\033[34m'
 
 
 class UnpackingCommands:
@@ -77,7 +78,9 @@ class RunCommands:
 
 while True:
     command = input(f'{INPUT_COLOR}MyTerminal (input): {RESET_COLOR}')
-
+    if command == 'exit':
+        print(f'{OUTPUT_COLOR}MyTerminal (output): Bye!{RESET_COLOR}')
+        break
     unpack = UnpackingCommands(command)
     unpacked_commands = unpack.unpacking()
 
