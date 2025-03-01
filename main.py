@@ -48,7 +48,7 @@ class Terminal:
         return True
 
     def show_error_message(self, error: Exception):
-        print(f'{ERROR_COLOR}MyTerminal (output): {error} {RESET}')
+        print(f'{ERROR_COLOR}MyTerminal (output): {error} {RESET_COLOR}')
 
     def run(self, commands: list[str]) -> bool:
         if 'create' in commands:
@@ -76,7 +76,7 @@ class RunCommands:
 
 
 while True:
-    command = input(f'{INPUT_COLOR}MyTerminal (input): {RESET}')
+    command = input(f'{INPUT_COLOR}MyTerminal (input): {RESET_COLOR}')
 
     unpack = UnpackingCommands(command)
     unpacked_commands = unpack.unpacking()
