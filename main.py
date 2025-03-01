@@ -21,9 +21,7 @@ class Terminal:
     def execute_command(self, command: str) -> bool:
 
         try:
-            if os.path.exists(self._path):
-                ...
-            else:
+            if not os.path.exists(self._path):
                 raise FileNotFoundError(
                     f'The folder {self._path} was not found.')
 
@@ -77,7 +75,7 @@ class RunCommands:
 
 
 while True:
-    command = input(f'{INPUT_COLOR}MyTerminal (input): {RESET_COLOR}')
+    command = input(f'{INPUT_COLOR}MyTerminal (input): {RESET_COLOR}').lower()
     if command == 'exit':
         print(f'{OUTPUT_COLOR}MyTerminal (output): Bye!{RESET_COLOR}')
         break
