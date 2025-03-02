@@ -1,5 +1,8 @@
+import argparse
 import os
 import subprocess
+from pathlib import Path
+from tkinter.filedialog import askdirectory
 
 from myterminal.commands_dict import create_commands
 
@@ -18,19 +21,25 @@ class UnpackingCommands:
 
 
 class Terminal:
-    def execute_command(self, command: str) -> bool:
+    def set_path(self, path) -> bool:
+        self._path = path
+        return True
 
+    def get_path(self) -> str | None:
+        return self._path
+
+    def execute_command(self, command: str) -> bool:
         try:
-            if not os.path.exists(self._path):
-                raise FileNotFoundError(
-                    f'The folder {self._path} was not found.')
+            if os.path.exists(self._path):
+                subprocess.run(command, cwd=self.get_path(),
+                               capture_output=True,
+                               text=True, check=True)
+            else:
+                raise FileNotFoundError
 
         except FileNotFoundError as error:
             self.show_error_message(error)
             return False
-
-        try:
-            subprocess.run(command, capture_output=True, text=True, check=True)
 
         except subprocess.CalledProcessError as error:
             self.show_error_message(error)
@@ -40,35 +49,20 @@ class Terminal:
             self.show_error_message(error)
             return False
 
-        except FileNotFoundError as error:
-            self.show_error_message(error)
-            return False
-
         return True
 
     def show_error_message(self, error: Exception):
         print(f'{ERROR_COLOR}MyTerminal (output): {error} {RESET_COLOR}')
 
     def run(self, commands: list[str]) -> bool:
-        if 'create' in commands:
-            if 'venv' in commands:
-                command = create_commands['create_venv'] + commands[2] + ' '
-                if '-p' in commands:
-                    self._path = commands[4]
-                    command = create_commands['create_venv'] + \
-                        self._path + f'/{commands[2]} '
+        select_parser = argparse.ArgumentParser('Select folder.')
+        select_parser.add_argument('select_folder', help='Select folder.')
 
-                if '-i' in commands:
-                    install = False
-                    i_index = commands.index('-i')
-
-                    for i in range(i_index+1, len(commands)):
-                        command_install = create_commands['install_module'] + \
-                            commands[i]
-
-        if self.execute_command(command):
+        if select_parser.parse_args(commands):
+            ask = askdirectory()
+            path = Path(ask)
+            self.set_path(path)
             return True
-        return False
 
 
 class RunCommands:
