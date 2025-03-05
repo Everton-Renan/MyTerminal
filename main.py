@@ -44,10 +44,21 @@ class Terminal:
             info = json.load(file)
             return info['path']
 
-    def execute_command(self, command: str) -> bool:
+    def execute_command(self, command: str | list) -> bool:
         try:
             if os.path.exists(self.get_path()):
-                subprocess.run(command, cwd=self.get_path(),
+                if isinstance(command, str):
+                    command_to_run = UnpackingCommands(command).unpacking()
+                elif isinstance(command, list):
+                    unpacked_command = list()
+                    command_to_run = list()
+
+                    for i in command:
+                        unpacked_command = UnpackingCommands(i).unpacking()
+                        for c in unpacked_command:
+                            command_to_run.append(c)
+
+                subprocess.run(command_to_run, cwd=self.get_path(),
                                capture_output=True,
                                text=True, check=True)
             else:
@@ -58,7 +69,8 @@ class Terminal:
             return False
 
         except subprocess.CalledProcessError as error:
-            self.show_error_message(error)
+            if error.stderr:
+                self.show_error_message(error.stderr)
             return False
 
         except PermissionError as error:
@@ -67,8 +79,13 @@ class Terminal:
 
         return True
 
-    def show_error_message(self, error: Exception):
-        print(f'{ERROR_COLOR}MyTerminal (output): {error} {RESET_COLOR}')
+    def show_error_message(self, error: Exception) -> None:
+        print(
+            f'{ERROR_COLOR}MyTerminal (output): {error}{RESET_COLOR}')
+
+    def show_message(self, text: str) -> None:
+        print(
+            f'{OUTPUT_COLOR}MyTerminal (output): {text} {RESET_COLOR}')
 
     def run(self, commands: list[str]) -> bool:
 
@@ -103,14 +120,36 @@ class Terminal:
             create_parser.add_argument('type', help='Choose the type.')
             create_parser.add_argument(
                 'name', nargs='?', help='Choose the name', default='venv')
+            create_parser.add_argument('-i', '--install', nargs='+',
+                                       help='Enter the name of the modules'
+                                       ' you want to install in the virtual'
+                                       ' environment.')
 
             if manager_parser.parse_args(commands):
                 args = manager_parser.parse_args(commands)
                 if args.type == 'venv':
                     command = create_commands['create_venv'] + args.name
-                    self.execute_command(command)
+                    if not self.execute_command(command):
+                        return False
+
+                    self.show_message(
+                        'Virtual environment created successfully.')
+
+                if args.install:
+                    for module in args.install:
+                        name = '\\' + args.name
+                        python_path = self.get_path() + name + \
+                            create_commands['activate_venv']
+                        command = create_commands['install_module'] + \
+                            module
+
+                        if not self.execute_command([python_path, command]):
+                            return False
+
+                    self.show_message(
+                        f'The modules {args.install} have been installed successfully.')
                     return True
-        return False
+        return True
 
 
 class RunCommands:
