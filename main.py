@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 from tkinter.filedialog import askdirectory
 
-from myterminal.commands_dict import create_commands
+from myterminal.commands_dict import commands_dict
 
 INPUT_COLOR = '\033[32m'
 ERROR_COLOR = '\033[31m'
@@ -128,7 +128,7 @@ class Terminal:
             if manager_parser.parse_args(commands):
                 args = manager_parser.parse_args(commands)
                 if args.type == 'venv':
-                    command = create_commands['create_venv'] + args.name
+                    command = commands_dict['create_venv'] + args.name
                     if not self.execute_command(command):
                         return False
 
@@ -139,15 +139,16 @@ class Terminal:
                     for module in args.install:
                         name = '\\' + args.name
                         python_path = self.get_path() + name + \
-                            create_commands['activate_venv']
-                        command = create_commands['install_module'] + \
+                            commands_dict['activate_venv']
+                        command = commands_dict['install_module'] + \
                             module
 
                         if not self.execute_command([python_path, command]):
                             return False
 
                     self.show_message(
-                        f'The modules {args.install} have been installed successfully.')
+                        f'The modules {args.install} have been '
+                        'installed successfully.')
                     return True
         return True
 
