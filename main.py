@@ -146,11 +146,40 @@ class Terminal:
                         if not self.execute_command([python_path, command]):
                             return False
 
-                    self.show_message(
-                        f'The modules {args.install} have been '
-                        'installed successfully.')
-                    return True
-        return True
+                self.show_message(
+                    f'The modules {args.install} have been '
+                    'installed successfully.')
+                return True
+
+        elif commands[0] == 'install':
+            install_parser = subparsers.add_parser(
+                'install', help='Enter the name of the module you want '
+                'to install.')
+
+            install_parser.add_argument(
+                'name', help='Enter the name of the virtual environment')
+
+            install_parser.add_argument('install', nargs='+', help='Enter the name of the module you want '
+                                        'to install.')
+
+            if manager_parser.parse_args(commands):
+                args = manager_parser.parse_args(commands)
+
+                for module in args.install:
+                    name = '\\' + args.name
+                    python_path = self.get_path() + name + \
+                        commands_dict['activate_venv']
+
+                    command = commands_dict['install_module'] + \
+                        module
+                    if not self.execute_command([python_path, command]):
+                        return False
+
+                self.show_message(
+                    f'The modules {args.install} have been '
+                    'installed successfully.')
+                return True
+        return False
 
 
 class RunCommands:
