@@ -79,7 +79,7 @@ class Terminal:
 
         return True
 
-    def show_error_message(self, error: Exception) -> None:
+    def show_error_message(self, error: Exception | str) -> None:
         print(
             f'{ERROR_COLOR}MyTerminal (output): {error}{RESET_COLOR}')
 
@@ -135,23 +135,31 @@ class Terminal:
                     self.show_message(
                         'Virtual environment created successfully.')
 
-                if args.install:
-                    for module in args.install:
-                        name = '\\' + args.name
-                        python_path = self.get_path() + name + \
-                            commands_dict['activate_venv']
-                        command = commands_dict['install_module'] + \
-                            module
+                    if args.install:
+                        installed_modules = []
+                        for module in args.install:
+                            name = '\\' + args.name
+                            python_path = self.get_path() + name + \
+                                commands_dict['activate_venv']
+                            command = commands_dict['install_module'] + \
+                                module
 
-                        if not self.execute_command([python_path, command]):
-                            return False
+                            if not self.execute_command(
+                                [python_path, command]
+                            ):
+                                self.show_error_message(
+                                    'An error occurred while '
+                                    f'installing the module {module}.')
 
-                    self.show_message(
-                        f'The modules {args.install} have been '
-                        'installed successfully.')
-                    return True
-                else:
-                    return True
+                                continue
+
+                            installed_modules.append(module)
+                        self.show_message(
+                            f'The modules {installed_modules} have been '
+                            'installed successfully.')
+                        return True
+                    else:
+                        return True
 
         elif commands[0] == 'install':
             install_parser = subparsers.add_parser(
@@ -168,18 +176,35 @@ class Terminal:
             if manager_parser.parse_args(commands):
                 args = manager_parser.parse_args(commands)
 
+                if args.install == ['']:
+                    self.show_error_message('No modules sent.')
+                    return False
+
+                installed_modules = []
                 for module in args.install:
                     name = '\\' + args.name
                     python_path = self.get_path() + name + \
                         commands_dict['activate_venv']
 
-                    command = commands_dict['install_module'] + \
-                        module
-                    if not self.execute_command([python_path, command]):
+                    if not os.path.exists(python_path):
+                        self.show_error_message('Virtual environment '
+                                                f'({args.name}) not found.')
                         return False
 
+                    command = commands_dict['install_module'] + \
+                        module
+
+                    if not self.execute_command([python_path, command]):
+                        self.show_error_message(
+                            'An error occurred while '
+                            f'installing the module {module}.'
+                        )
+
+                        continue
+
+                    installed_modules.append(module)
                 self.show_message(
-                    f'The modules {args.install} have been '
+                    f'The modules {installed_modules} have been '
                     'installed successfully.')
                 return True
         return False
