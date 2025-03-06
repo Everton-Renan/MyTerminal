@@ -119,7 +119,7 @@ class Terminal:
             create_parser = subparsers.add_parser('create', help='Create.')
             create_parser.add_argument('type', help='Choose the type.')
             create_parser.add_argument(
-                'name', nargs='?', help='Choose the name', default='venv')
+                'name', nargs='?', help='Choose the name')
             create_parser.add_argument('-i', '--install', nargs='+',
                                        help='Enter the name of the modules'
                                        ' you want to install in the virtual'
@@ -128,6 +128,9 @@ class Terminal:
             if manager_parser.parse_args(commands):
                 args = manager_parser.parse_args(commands)
                 if args.type == 'venv':
+
+                    if args.name is None:
+                        args.name = 'venv'
                     command = commands_dict['create_venv'] + args.name
                     if not self.execute_command(command):
                         return False
@@ -159,6 +162,27 @@ class Terminal:
                             'installed successfully.')
                         return True
                     else:
+                        return True
+
+                if args.type == 'file':
+                    command = commands_dict['create_file']
+                    command_to_run = command.replace(
+                        'file-path', self.get_path()
+                    )
+
+                    if args.name is None:
+                        self.show_error_message(
+                            'No name was sent (e.g. main.py).')
+                        return False
+
+                    command_to_run = command_to_run.replace(
+                        'file-name', args.name)
+
+                    if not self.execute_command(command_to_run):
+                        return False
+                    else:
+                        self.show_message(
+                            f'The file {args.name} was created successfully.')
                         return True
 
         elif commands[0] == 'install':
