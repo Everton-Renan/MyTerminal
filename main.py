@@ -99,10 +99,18 @@ class Terminal:
         select_parser = argparse.ArgumentParser('Select folder.')
         select_parser.add_argument('select_folder', help='Select folder.')
         select_parser.add_argument(
+            '-r', '--restore', action='store_true',
+            help='Restores the old path from data.json.')
+        select_parser.add_argument(
             '-p', '--path', nargs='?', help='Enter the path to the folder.')
 
         if commands[0] == 'select_folder':
             select_args = select_parser.parse_args(commands)
+            if select_args.restore:
+                path = self.get_path()
+                self.set_path(path)
+                return True
+
             if not select_args.path:
                 ask = askdirectory()
                 path = Path(ask)
