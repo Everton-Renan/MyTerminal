@@ -58,9 +58,12 @@ class Terminal:
                         for c in unpacked_command:
                             command_to_run.append(c)
 
-                subprocess.run(command_to_run, cwd=self.get_path(),
-                               capture_output=True,
-                               text=True, check=True)
+                result = subprocess.run(command_to_run, cwd=self.get_path(),
+                                        capture_output=True,
+                                        text=True, check=True)
+
+                if command == commands_dict['ls']:
+                    print(result.stdout)
             else:
                 raise FileNotFoundError('Folder not found.')
 
@@ -103,6 +106,10 @@ class Terminal:
             help='Restores the old path from data.json.')
         select_parser.add_argument(
             '-p', '--path', nargs='?', help='Enter the path to the folder.')
+
+        ls_or_cd_parser = argparse.ArgumentParser('List directory.')
+        ls_or_cd_parser.add_argument('action', choices=(
+            'ls', 'cd'), help='List or change directory.')
 
         if commands[0] == 'select_folder':
             select_args = select_parser.parse_args(commands)
@@ -239,6 +246,13 @@ class Terminal:
                     f'The modules {installed_modules} have been '
                     'installed successfully.')
                 return True
+
+        elif commands[0] in ('ls', 'cd'):
+            args = ls_or_cd_parser.parse_args(commands)
+            if args.action == 'ls':
+                command = commands_dict['ls']
+                if self.execute_command(command):
+                    return True
         return False
 
 
