@@ -107,9 +107,13 @@ class Terminal:
         select_parser.add_argument(
             '-p', '--path', nargs='?', help='Enter the path to the folder.')
 
-        ls_or_cd_parser = argparse.ArgumentParser('List directory.')
-        ls_or_cd_parser.add_argument('action', choices=(
-            'ls', 'cd'), help='List or change directory.')
+        ls_parser = argparse.ArgumentParser('List directory.')
+        ls_parser.add_argument('action', help='List directory.')
+
+        cd_parser = argparse.ArgumentParser('Change directory.')
+        cd_parser.add_argument('action', help='Change directory.')
+        cd_parser.add_argument(
+            'dir', help='Enter the directory you want to change to.')
 
         if commands[0] == 'select_folder':
             select_args = select_parser.parse_args(commands)
@@ -247,12 +251,26 @@ class Terminal:
                     'installed successfully.')
                 return True
 
-        elif commands[0] in ('ls', 'cd'):
-            args = ls_or_cd_parser.parse_args(commands)
+        elif commands[0] == 'ls':
+            args = ls_parser.parse_args(commands)
             if args.action == 'ls':
                 command = commands_dict['ls']
                 if self.execute_command(command):
                     return True
+
+        elif commands[0] == 'cd':
+            args = cd_parser.parse_args(commands)
+            if args.action == 'cd':
+                with open('data.json', 'r', encoding='utf8') as file:
+                    path = json.load(file)
+                    new_path = path['path'] + '\\' + commands[1] + '\\'
+
+                    if os.path.exists(new_path):
+                        self.set_path(new_path)
+                        return True
+                    else:
+                        self.show_error_message('Folder not found.')
+                        return False
         return False
 
 
