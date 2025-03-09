@@ -36,7 +36,8 @@ class Terminal:
 
         if path is not None:
             with open('data.json', 'w', encoding='utf8') as file:
-                info = {'path': str(path)}
+                resolved_path = Path(path).resolve()
+                info = {'path': str(resolved_path)}
                 json.dump(info, file, ensure_ascii=False, indent=2)
 
             return True
@@ -322,9 +323,20 @@ class RunCommands:
         return False
 
 
+def get_path() -> str:
+    with open('data.json', 'r', encoding='utf8') as file:
+        try:
+            path = json.load(file)
+            return path['path']
+        except json.decoder.JSONDecodeError:
+            path = 'No folder selected'
+            return path
+
+
 while True:
     user_input = input(
-        f'{INPUT_COLOR}MyTerminal (input): {RESET_COLOR}').lower()
+        f'{INPUT_COLOR}{get_path()}\n'
+        f'MyTerminal (input): {RESET_COLOR}').lower()
     if user_input == 'exit':
         print(f'{OUTPUT_COLOR}MyTerminal (output): Bye!{RESET_COLOR}')
         break
