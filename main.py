@@ -23,6 +23,10 @@ class UnpackingCommands:
 
 class Terminal:
     def set_path(self, path: str | Path) -> bool:
+
+        if isinstance(path, bool):
+            raise ValueError('No path found.')
+
         if not os.path.exists(path):
             try:
                 raise FileNotFoundError('Folder not Found.')
@@ -39,10 +43,13 @@ class Terminal:
         else:
             return False
 
-    def get_path(self) -> str:
+    def get_path(self) -> str | bool:
         with open('data.json', 'r', encoding='utf8') as file:
-            info = json.load(file)
-            return info['path']
+            try:
+                info = json.load(file)
+                return info['path']
+            except json.decoder.JSONDecodeError:
+                return False
 
     def execute_command(self, command: str | list) -> bool:
         try:
@@ -58,7 +65,11 @@ class Terminal:
                         for c in unpacked_command:
                             command_to_run.append(c)
 
-                result = subprocess.run(command_to_run, cwd=self.get_path(),
+                cwd = self.get_path()
+                if isinstance(cwd, bool):
+                    raise TypeError
+
+                result = subprocess.run(command_to_run, cwd=cwd,
                                         capture_output=True,
                                         text=True, check=True)
 
@@ -78,6 +89,10 @@ class Terminal:
 
         except PermissionError as error:
             self.show_error_message(error)
+            return False
+
+        except TypeError:
+            self.show_error_message('No path found.')
             return False
 
         return True
@@ -119,6 +134,10 @@ class Terminal:
             select_args = select_parser.parse_args(commands)
             if select_args.restore:
                 path = self.get_path()
+                if isinstance(path, bool):
+                    self.show_error_message('No path found.')
+                    return False
+
                 self.set_path(path)
                 return True
 
@@ -161,7 +180,12 @@ class Terminal:
                         installed_modules = []
                         for module in args.install:
                             name = '\\' + args.name
-                            python_path = self.get_path() + name + \
+                            path = self.get_path()
+                            if isinstance(path, bool):
+                                self.show_error_message('No path found.')
+                                return False
+
+                            python_path = path + name + \
                                 commands_dict['activate_venv']
                             command = commands_dict['install_module'] + \
                                 module
@@ -184,10 +208,19 @@ class Terminal:
                         return True
 
                 if args.type == 'file':
-                    command = commands_dict['create_file']
-                    command_to_run = command.replace(
-                        'file-path', self.get_path()
-                    )
+                    try:
+                        command = commands_dict['create_file']
+                        path = self.get_path()
+                        if isinstance(path, bool):
+                            self.show_error_message('No path found.')
+                            return False
+
+                        command_to_run = command.replace(
+                            'file-path', path
+                        )
+                    except TypeError:
+                        self.show_error_message('No path found.')
+                        return False
 
                     if args.name is None:
                         self.show_error_message(
@@ -262,14 +295,18 @@ class Terminal:
             args = cd_parser.parse_args(commands)
             if args.action == 'cd':
                 with open('data.json', 'r', encoding='utf8') as file:
-                    path = json.load(file)
-                    new_path = path['path'] + '\\' + commands[1] + '\\'
+                    try:
+                        path = json.load(file)
+                        new_path = path['path'] + '\\' + commands[1] + '\\'
 
-                    if os.path.exists(new_path):
-                        self.set_path(new_path)
-                        return True
-                    else:
-                        self.show_error_message('Folder not found.')
+                        if os.path.exists(new_path):
+                            self.set_path(new_path)
+                            return True
+                        else:
+                            self.show_error_message('Folder not found.')
+                            return False
+                    except json.decoder.JSONDecodeError:
+                        self.show_error_message('No path found.')
                         return False
         return False
 
