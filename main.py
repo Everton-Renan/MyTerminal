@@ -238,6 +238,30 @@ class Terminal:
                             f'The file {args.name} was created successfully.')
                         return True
 
+                if args.type == 'dir':
+                    if args.name == '' or args.name is None:
+                        self.show_error_message(
+                            'No name was sent (e.g. example).')
+                        return False
+
+                    command = commands_dict['create_dir']
+                    path = self.get_path()
+                    if isinstance(path, bool):
+                        self.show_error_message('No path found.')
+                        return False
+
+                    command_to_run = command.replace(
+                        'name', args.name
+                    )
+
+                    if not self.execute_command(command_to_run):
+                        return False
+                    else:
+                        self.show_message(
+                            f'The directory {args.name} was created '
+                            'successfully.')
+                        return True
+
         elif commands[0] == 'install':
             install_parser = subparsers.add_parser(
                 'install', help='Enter the name of the module you want '
