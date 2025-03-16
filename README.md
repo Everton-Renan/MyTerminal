@@ -9,6 +9,18 @@ MyTerminal é uma ferramenta CLI (Command Line Interface) que facilita a criaç�
 - Windows 11
 - Kali Linux
 
+## Uso no VS CODE
+**Caso queira utilizar o MyTerminal diretamente no vscode o arquivo referenciado precisa ser o configure.py,**
+**ex.: no settings.json**
+```
+"terminal.integrated.profiles.windows": {
+    "MyTerminal": {
+        "path": "caminho/para/o/python.exe",
+        "args": ["caminho/para/o/configure.py", "${workspaceFolder}"]
+        }
+    },
+```
+
 
 <h3>Comando create</h3>
 <p>Gerencia a criação de arquivos, diretórios e ambientes virtuais.</p>
