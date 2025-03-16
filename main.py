@@ -2,15 +2,24 @@ import argparse
 import json
 import os
 import subprocess
+import sysconfig
+from copy import deepcopy
 from pathlib import Path
 from tkinter.filedialog import askdirectory
 
-from myterminal.commands_dict import commands_dict
+from myterminal.commands_dict import commands, commands_dict_linux
 
 INPUT_COLOR = '\033[32m'
 ERROR_COLOR = '\033[31m'
 RESET_COLOR = '\033[0m'
 OUTPUT_COLOR = '\033[34m'
+
+os_info = sysconfig.get_platform()
+
+if 'win' in os_info:
+    terminal_commands = deepcopy(commands)
+elif 'linux' in os_info:
+    terminal_commands = deepcopy(commands_dict_linux)
 
 
 class UnpackingCommands:
@@ -74,7 +83,7 @@ class Terminal:
                                         capture_output=True,
                                         text=True, check=True)
 
-                if command == commands_dict['ls']:
+                if command == terminal_commands['ls']:
                     print(result.stdout)
             else:
                 raise FileNotFoundError('Folder not found.')
@@ -98,7 +107,10 @@ class Terminal:
 
         return True
 
-    def show_error_message(self, error: Exception | str) -> None:
+    def show_error_message(self,
+                           error: Exception |
+                           BaseException
+                           | str) -> None:
         print(
             f'{ERROR_COLOR}MyTerminal (output): {error}{RESET_COLOR}')
 
@@ -163,14 +175,19 @@ class Terminal:
                                        help='Enter the name of the modules'
                                        ' you want to install in the virtual'
                                        ' environment.')
+            try:
+                manager_parser.parse_args(commands)
+            except SystemExit:
+                return False
 
             if manager_parser.parse_args(commands):
                 args = manager_parser.parse_args(commands)
+
                 if args.type == 'venv':
 
                     if args.name is None:
                         args.name = 'venv'
-                    command = commands_dict['create_venv'] + args.name
+                    command = terminal_commands['create_venv'] + args.name
                     if not self.execute_command(command):
                         return False
 
@@ -180,15 +197,19 @@ class Terminal:
                     if args.install:
                         installed_modules = []
                         for module in args.install:
-                            name = '\\' + args.name
+                            if os_info == 'win':
+                                name = '\\' + args.name
+                            else:
+                                name = '/' + args.name
+
                             path = self.get_path()
                             if isinstance(path, bool):
                                 self.show_error_message('No path found.')
                                 return False
 
                             python_path = path + name + \
-                                commands_dict['activate_venv']
-                            command = commands_dict['install_module'] + \
+                                terminal_commands['activate_venv']
+                            command = terminal_commands['install_module'] + \
                                 module
 
                             if not self.execute_command(
@@ -210,7 +231,7 @@ class Terminal:
 
                 if args.type == 'file':
                     try:
-                        command = commands_dict['create_file']
+                        command = terminal_commands['create_file']
                         path = self.get_path()
                         if isinstance(path, bool):
                             self.show_error_message('No path found.')
@@ -244,7 +265,7 @@ class Terminal:
                             'No name was sent (e.g. example).')
                         return False
 
-                    command = commands_dict['create_dir']
+                    command = terminal_commands['create_dir']
                     path = self.get_path()
                     if isinstance(path, bool):
                         self.show_error_message('No path found.')
@@ -274,6 +295,11 @@ class Terminal:
                                         'name of the module you want '
                                         'to install.')
 
+            try:
+                manager_parser.parse_args(commands)
+            except SystemExit:
+                return False
+
             if manager_parser.parse_args(commands):
                 args = manager_parser.parse_args(commands)
 
@@ -285,14 +311,14 @@ class Terminal:
                 for module in args.install:
                     name = '\\' + args.name
                     python_path = self.get_path() + name + \
-                        commands_dict['activate_venv']
+                        terminal_commands['activate_venv']
 
                     if not os.path.exists(python_path):
                         self.show_error_message('Virtual environment '
                                                 f'({args.name}) not found.')
                         return False
 
-                    command = commands_dict['install_module'] + \
+                    command = terminal_commands['install_module'] + \
                         module
 
                     if not self.execute_command([python_path, command]):
@@ -312,17 +338,26 @@ class Terminal:
         elif commands[0] == 'ls':
             args = ls_parser.parse_args(commands)
             if args.action == 'ls':
-                command = commands_dict['ls']
+                command = terminal_commands['ls']
                 if self.execute_command(command):
                     return True
 
         elif commands[0] == 'cd':
+            try:
+                cd_parser.parse_args(commands)
+            except SystemExit:
+                return False
+
             args = cd_parser.parse_args(commands)
             if args.action == 'cd':
                 with open('data.json', 'r', encoding='utf8') as file:
                     try:
                         path = json.load(file)
-                        new_path = path['path'] + '\\' + commands[1] + '\\'
+                        new_path = str()
+                        if 'win' in os_info:
+                            new_path = path['path'] + '\\' + commands[1] + '\\'
+                        elif 'linux' in os_info:
+                            new_path = path['path'] + '/' + commands[1] + '/'
 
                         if os.path.exists(new_path):
                             self.set_path(new_path)
@@ -347,14 +382,18 @@ class RunCommands:
         return False
 
 
-def get_path() -> str:
-    with open('data.json', 'r', encoding='utf8') as file:
-        try:
-            path = json.load(file)
-            return path['path']
-        except json.decoder.JSONDecodeError:
-            path = 'No folder selected'
-            return path
+def get_path() -> str | None:
+    try:
+        with open('data.json', 'r', encoding='utf8') as file:
+            try:
+                path = json.load(file)
+                return path['path']
+            except json.decoder.JSONDecodeError:
+                path = 'No folder selected'
+                return path
+    except FileNotFoundError:
+        with open('data.json', 'w', encoding='utf8'):
+            pass
 
 
 while True:
