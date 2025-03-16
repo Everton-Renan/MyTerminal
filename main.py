@@ -144,6 +144,11 @@ class Terminal:
             'dir', help='Enter the directory you want to change to.')
 
         if commands[0] == 'select_folder':
+            try:
+                select_parser.parse_args(commands)
+            except SystemExit:
+                return False
+
             select_args = select_parser.parse_args(commands)
             if select_args.restore:
                 path = self.get_path()
@@ -336,6 +341,11 @@ class Terminal:
                 return True
 
         elif commands[0] == 'ls':
+            try:
+                ls_parser.parse_args(commands)
+            except SystemExit:
+                return False
+
             args = ls_parser.parse_args(commands)
             if args.action == 'ls':
                 command = terminal_commands['ls']
